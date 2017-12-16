@@ -1,7 +1,6 @@
 
 # Linux Command Hijacking (Winter Wonder Landing)
 
-
 ```
 My name is Bushy Evergreen, and I have a problem for you.
 I think a server got owned, and I can only offer a clue.
@@ -123,4 +122,84 @@ USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
 elf          1  0.5  0.0  18028  2888 pts/0    Ss   19:44   0:00 /bin/bash /sbin/init
 elf         12  0.0  0.0  18248  3220 pts/0    S    19:44   0:00 /bin/bash
 elf         33  0.0  0.0  34424  2872 pts/0    R+   19:44   0:00 ps -aux
+```
+
+
+# Candy Cane Striper (Cryokinetic Magic)
+
+For this terminal we are tasked with executing a binary file in our home
+directory called `CandyCaneStriper`. The file is owned by root, and does
+not have any execute permissions. We are allowed to read it though, 
+meaning that we can copy the binary to a new file and thereby becoming the
+owner (see: [Run a binary owned by root without sudo](https://unix.stackexchange.com/a/157999)):
+
+```
+My name is Holly Evergreen, and I have a conundrum.
+I broke the candy cane striper, and I'm near throwing a tantrum.
+Assembly lines have stopped since the elves can't get their candy cane fix.
+We hope you can start the striper once again, with your vast bag of tricks.
+
+
+Run the CandyCaneStriper executable to complete this challenge.
+
+elf@f3da6d0fa193:~$ ls -la
+total 68
+drwxr-xr-x 1 elf  elf   4096 Dec 15 20:00 .
+drwxr-xr-x 1 root root  4096 Dec  5 19:31 ..
+-rw-r--r-- 1 elf  elf    220 Aug 31  2015 .bash_logout
+-rw-r--r-- 1 root root  3143 Dec 15 19:59 .bashrc
+-rw-r--r-- 1 elf  elf    655 May 16  2017 .profile
+-rw-r--r-- 1 root root 45224 Dec 15 19:59 CandyCaneStriper
+
+elf@f3da6d0fa193:~$ cp CandyCaneStriper CandyCaneStriper1
+```
+
+Having done that we still notice that we are unable to run `chmod`. We can
+work around this by instead using perl to invoke the `chmod()` system call
+(see: [How to chmod without /usr/bin/chmod?](https://unix.stackexchange.com/a/83864)):
+
+```
+elf@f3da6d0fa193:~$ chmod +x CandyCaneStriper1
+
+elf@f3da6d0fa193:~$ ls -la
+total 116
+drwxr-xr-x 1 elf  elf   4096 Dec 16 14:16 .
+drwxr-xr-x 1 root root  4096 Dec  5 19:31 ..
+-rw-r--r-- 1 elf  elf    220 Aug 31  2015 .bash_logout
+-rw-r--r-- 1 root root  3143 Dec 15 19:59 .bashrc
+-rw-r--r-- 1 elf  elf    655 May 16  2017 .profile
+-rw-r--r-- 1 root root 45224 Dec 15 19:59 CandyCaneStriper
+-rw-r--r-- 1 elf  elf  45224 Dec 16 14:16 CandyCaneStriper1
+
+elf@f3da6d0fa193:~$ perl -e 'chmod 0755, "CandyCaneStriper1"'
+
+elf@f3da6d0fa193:~$ ls -la
+total 116
+drwxr-xr-x 1 elf  elf   4096 Dec 16 14:16 .
+drwxr-xr-x 1 root root  4096 Dec  5 19:31 ..
+-rw-r--r-- 1 elf  elf    220 Aug 31  2015 .bash_logout
+-rw-r--r-- 1 root root  3143 Dec 15 19:59 .bashrc
+-rw-r--r-- 1 elf  elf    655 May 16  2017 .profile
+-rw-r--r-- 1 root root 45224 Dec 15 19:59 CandyCaneStriper
+-rwxr-xr-x 1 elf  elf  45224 Dec 16 14:16 CandyCaneStriper1
+```
+
+We now have execute permissions to the binary, so we run it to complete
+the terminal:
+```
+elf@f3da6d0fa193:~$ ./CandyCaneStriper1 
+                   _..._
+                 .'\\ //`,      
+                /\\.'``'.=",
+               / \/     ;==|
+              /\\/    .'\`,`
+             / \/     `""`
+            /\\/
+           /\\/
+          /\ /
+         /\\/
+        /`\/
+        \\/
+         `
+The candy cane striping machine is up and running!
 ```
