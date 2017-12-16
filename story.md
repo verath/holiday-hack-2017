@@ -10,14 +10,14 @@ We are rewarded with [GreatBookPage1.pdf](book/GreatBookPage1.pdf). The title of
 # 2) Investigate the Letters to Santa application at https://l2s.northpolechristmastown.com. What is the topic of The Great Book page available in the web root of the server? What is Alabaster Snowball's password?
 
 Looking at the source, we find a link to the development version:
-```
+```html
 <!-- Development version -->
 <a href="http://dev.northpolechristmastown.com" style="display: none;">Access Development Version</a>
 ```
 
 The development version takes us to a "Toy Request Form", where we can add, edit and remove toy requests. It has an interesting footer:
 
-```
+```html
 <div id="the-footer"><p class="center-it">Powered By: <a href="https://struts.apache.org/">Apache Struts</a></p></div>
 <!-- Friend over at Equal-facts Inc recommended this framework-->
 ```
