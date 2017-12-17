@@ -1,1 +1,4 @@
 __pycache__
+
+# personal public key for add_ssh.py script.
+task2/id_rsa.pub
