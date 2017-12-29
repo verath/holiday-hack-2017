@@ -541,7 +541,9 @@ http://mail.northpolechristmastown.com/attachments/GreatBookPage4_893jt91md2.pdf
 From the book we learn about the lollipop guild, trying to (allegedly) ruin Christmas. Sha1: `f192a884f68af24ae55d9d9ad4adf8d3a3995258` 
 
 
-# 6) The North Pole engineering team has introduced an Elf as a Service (EaaS) platform to optimize resource allocation for mission-critical Christmas engineering projects at http://eaas.northpolechristmastown.com. Visit the system and retrieve instructions for accessing The Great Book page from C:\greatbook.txt. Then retrieve The Great Book PDF file by following those directions. What is the title of The Great Book page?
+# 6) Elf as a Service (EaaS)
+
+The North Pole engineering team has introduced an Elf as a Service (EaaS) platform to optimize resource allocation for mission-critical Christmas engineering projects at http://eaas.northpolechristmastown.com. Visit the system and retrieve instructions for accessing The Great Book page from C:\greatbook.txt. Then retrieve The Great Book PDF file by following those directions. What is the title of The Great Book page?
 
 Title of the Great Book Page is "The Dreaded Inter-Dimensional Tornadoes" and sha1 is `8943e0524e1bf0ea8c7968e85b2444323cb237af`
 
