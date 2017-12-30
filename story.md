@@ -663,7 +663,7 @@ Host: 10.142.0.3:4443
 Connection: Keep-Alive
 ```
 
-By browsing to http://eaas.northpolechristmastown.com/xMk7H1NypzAqYoKw/greatbook6.pdf we get the next page!
+By browsing to http://eaas.northpolechristmastown.com/xMk7H1NypzAqYoKw/greatbook6.pdf we get the next page! Sha1: `8943e0524e1bf0ea8c7968e85b2444323cb237af`.
 
 
 # 7) Like any other complex SCADA systems, the North Pole uses Elf-Machine Interfaces (EMI) to monitor and control critical infrastructure assets. These systems serve many uses, including email access and web browsing. Gain access to the EMI server through the use of a phishing attack with your access to the EWA server. Retrieve The Great Book page from C:\GreatBookPage7.pdf. What does The Great Book page describe?
