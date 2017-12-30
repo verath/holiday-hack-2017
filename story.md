@@ -541,6 +541,33 @@ http://mail.northpolechristmastown.com/attachments/GreatBookPage4_893jt91md2.pdf
 From the book we learn about the lollipop guild, trying to (allegedly) ruin Christmas. Sha1: `f192a884f68af24ae55d9d9ad4adf8d3a3995258` 
 
 
+
+# 5) How many infractions are required to be marked as naughty on Santa's Naughty and Nice List? What are the names of at least six insider threat moles? Who is throwing the snowballs from the top of the North Pole Mountain and what is your proof?
+
+ 
+## Who is throwing the snowballs from the top of the North Pole Mountain and what is your proof?
+
+We find the answer to the last part of task 5 by solving the Bumbles Bounce level:
+
+![Bumbles Bounce snowball level](task5/snowball.png)
+
+Solving the level gives us an NPC converstation between Bumble (the Abominable Snow Monster) and Sam:
+
+> **Bumble:** 
+>
+> Arrrrrrrrgh! Grrrrrrrr! ROOOOOOOAR!
+>
+> **Sam:**
+>
+> You've done it! You found out who was throwing the giant snowballs! It was the Abominable Snow Monster.
+> We should have known. Thank you for your great work!
+> But, you know, he doesn't seem quite himself. Look into his eyes. It almost looks like he
+> has been hypnotized. Something's not right with him.
+> In fact, he seems to be under someone else's control. We've got to find out who is
+> pulling his strings, or else the real villain will remain on the loose and
+> will likely strike again.
+> It means, buckle your seatbelt, dear player, because the North Pole is going bye-bye
+
 # 6) Elf as a Service (EaaS)
 
 The North Pole engineering team has introduced an Elf as a Service (EaaS) platform to optimize resource allocation for mission-critical Christmas engineering projects at http://eaas.northpolechristmastown.com. Visit the system and retrieve instructions for accessing The Great Book page from C:\greatbook.txt. Then retrieve The Great Book PDF file by following those directions. What is the title of The Great Book page?
