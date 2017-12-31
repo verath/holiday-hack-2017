@@ -1,43 +1,49 @@
 
 # Linux Command Hijacking (Winter Wonder Landing)
 
+With this terminal we are supposed to find the file elftalkd
+and execute it, but locate and find don't seem to work
+
 ```
+                                 |
+                               \ ' /
+                             -- (*) --
+                                >*<
+                               >0<@<
+                              >>>@<<*
+                             >@>*<0<<<
+                            >*>>@<<<@<<
+                           >@>>0<<<*<<@<
+                          >*>>0<<@<<<@<<<
+                         >@>>*<<@<>*<<0<*<
+           \*/          >0>>*<<@<>0><<*<@<<
+       ___\\U//___     >*>>@><0<<*>>@><*<0<<
+       |\\ | | \\|    >@>>0<*<0>>@<<0<<<*<@<<  
+       | \\| | _(UU)_ >((*))_>0><*<0><@<<<0<*<
+       |\ \| || / //||.*.*.*.|>>@<<*<<@>><0<<<
+       |\\_|_|&&_// ||*.*.*.*|_\\db//_               
+       """"|'.'.'.|~~|.*.*.*|     ____|_
+           |'.'.'.|   ^^^^^^|____|>>>>>>|
+           ~~~~~~~~         '""""`------'
 My name is Bushy Evergreen, and I have a problem for you.
 I think a server got owned, and I can only offer a clue.
 We use the system for chat, to keep toy production running.
 Can you help us recover from the server connection shunning?
 
-
 Find and run the elftalkd binary to complete this challenge.
-```
 
-Unfortunately, it seemed like the `find` command could not be used:
-```sh
-$ find
-bash: /usr/local/bin/find: cannot execute binary file: Exec format error
-```
-
-Instead, we use ls to recursively list all files and grep for the wanted binary:
-```sh 
-$ ls -R / | grep -n3 elftalkd
+elf@7e33d7981b0b:~$ ls -lhaR / |grep -B5 elftalkd
 ls: cannot open directory '/proc/tty/driver': Permission denied
 ls: cannot open directory '/root': Permission denied
-5087-bin
-5088-
-5089-/run/elftalk/bin:
-5090:elftalkd
-5091-
-5092-/run/lock:
-5093-
+/run/elftalk/bin:
+total 7.1M
+drwxr-xr-x 1 root root 4.0K Dec  4 14:32 .
+drwxr-xr-x 1 root root 4.0K Dec  4 14:32 ..
+-rwxr-xr-x 1 root root 7.1M Dec  4 14:29 elftalkd
 ls: cannot open directory '/var/cache/apt/archives/partial': Permission denied
 ls: cannot open directory '/var/cache/ldconfig': Permission denied
 ls: cannot open directory '/var/lib/apt/lists/partial': Permission denied
-```
-
-And then we run it solving the terminal:
-
-```
-$ /run/elftalk/bin/elftalkd 
+elf@7e33d7981b0b:~$ /run/elftalk/bin/elftalkd
         Running in interactive mode
         --== Initializing elftalkd ==--
 Initializing Messaging System!
@@ -59,9 +65,9 @@ LANG=en_US.UTF-8
 Timezone=UTC
 Commencing Elf Talk Daemon (pid=6021)... done!
 Background daemon...
+elf@7e33d7981b0b:~$ 
+
 ```
-
-
 
 # Troublesome Process (Winconceivable: The Cliffs of Winsanity)
 
@@ -325,74 +331,6 @@ elf@ea96bcf6ac17:~$
 elf@ea96bcf6ac17:~$ ps aux |grep santaslittle
 elf        175  0.0  0.0  11284   948 pts/0    S+   13:26   0:00 grep --color=auto santaslittle
 elf@ea96bcf6ac17:~$ 
-```
-
-# Linux command highjacking
-
-With this terminal we are supposed to find the file elftalkd
-and execute it, but locate and find don't seem to work
-
-```
-                                 |
-                               \ ' /
-                             -- (*) --
-                                >*<
-                               >0<@<
-                              >>>@<<*
-                             >@>*<0<<<
-                            >*>>@<<<@<<
-                           >@>>0<<<*<<@<
-                          >*>>0<<@<<<@<<<
-                         >@>>*<<@<>*<<0<*<
-           \*/          >0>>*<<@<>0><<*<@<<
-       ___\\U//___     >*>>@><0<<*>>@><*<0<<
-       |\\ | | \\|    >@>>0<*<0>>@<<0<<<*<@<<  
-       | \\| | _(UU)_ >((*))_>0><*<0><@<<<0<*<
-       |\ \| || / //||.*.*.*.|>>@<<*<<@>><0<<<
-       |\\_|_|&&_// ||*.*.*.*|_\\db//_               
-       """"|'.'.'.|~~|.*.*.*|     ____|_
-           |'.'.'.|   ^^^^^^|____|>>>>>>|
-           ~~~~~~~~         '""""`------'
-My name is Bushy Evergreen, and I have a problem for you.
-I think a server got owned, and I can only offer a clue.
-We use the system for chat, to keep toy production running.
-Can you help us recover from the server connection shunning?
-Find and run the elftalkd binary to complete this challenge.
-elf@7e33d7981b0b:~$ ls -lhaR / |grep -B5 elftalkd
-ls: cannot open directory '/proc/tty/driver': Permission denied
-ls: cannot open directory '/root': Permission denied
-/run/elftalk/bin:
-total 7.1M
-drwxr-xr-x 1 root root 4.0K Dec  4 14:32 .
-drwxr-xr-x 1 root root 4.0K Dec  4 14:32 ..
--rwxr-xr-x 1 root root 7.1M Dec  4 14:29 elftalkd
-ls: cannot open directory '/var/cache/apt/archives/partial': Permission denied
-ls: cannot open directory '/var/cache/ldconfig': Permission denied
-ls: cannot open directory '/var/lib/apt/lists/partial': Permission denied
-elf@7e33d7981b0b:~$ /run/elftalk/bin/elftalkd
-        Running in interactive mode
-        --== Initializing elftalkd ==--
-Initializing Messaging System!
-Nice-O-Meter configured to 0.90 sensitivity.
-Acquiring messages from local networks...
---== Initialization Complete ==--
-      _  __ _        _ _       _ 
-     | |/ _| |      | | |     | |
-  ___| | |_| |_ __ _| | | ____| |
- / _ \ |  _| __/ _` | | |/ / _` |
-|  __/ | | | || (_| | |   < (_| |
- \___|_|_|  \__\__,_|_|_|\_\__,_|
--*> elftalkd! <*-
-Version 9000.1 (Build 31337) 
-By Santa Claus & The Elf Team
-Copyright (C) 2017 NotActuallyCopyrighted. No actual rights reserved.
-Using libc6 version 2.23-0ubuntu9
-LANG=en_US.UTF-8
-Timezone=UTC
-Commencing Elf Talk Daemon (pid=6021)... done!
-Background daemon...
-elf@7e33d7981b0b:~$ 
-
 ```
 
 # Web Log Terminal
