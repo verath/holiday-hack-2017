@@ -1,4 +1,3 @@
-
 # Linux Command Hijacking (Winter Wonder Landing)
 
 With this terminal we are supposed to find the file elftalkd
@@ -67,67 +66,6 @@ Commencing Elf Talk Daemon (pid=6021)... done!
 Background daemon...
 elf@7e33d7981b0b:~$ 
 
-```
-
-# Troublesome Process (Winconceivable: The Cliffs of Winsanity)
-
-```
-My name is Sparkle Redberry, and I need your help.
-My server is atwist, and I fear I may yelp.
-Help me kill the troublesome process gone awry.
-I will return the favor with a gift before nigh.
-Kill the "santaslittlehelperd" process to complete this challenge.
-```
-
-Looking at the running processes we see PID 8 is what we want to kill:
-```sh
-$ elf@55f83966318c:~$ ps -aux
-USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
-elf          1  0.2  0.0  18028  2828 pts/0    Ss   19:39   0:00 /bin/bash /sbin/init
-elf          8  0.0  0.0   4224   648 pts/0    S    19:39   0:00 /usr/bin/santaslittlehelperd
-elf         11  0.3  0.0  13528  6404 pts/0    S    19:39   0:00 /sbin/kworker
-elf         12  0.0  0.0  18248  3216 pts/0    S    19:39   0:00 /bin/bash
-elf         18  1.2  0.0  71468 26520 pts/0    S    19:39   0:00 /sbin/kworker
-elf         48  0.0  0.0  34424  2860 pts/0    R+   19:40   0:00 ps -aux
-```
-
-Simply running `kill 8` doesn't work though, and gives us no message back:
-
-```sh
-$ kill 8
-```
-
-Looking at the .bashrc file in our current (home) directory we find that `kill` has been aliased to `true`:
-
-```sh
-$ cat .bashrc
-...
-# enable color support of ls and also add handy aliases
-if [ -x /usr/bin/dircolors ]; then
-    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
-    alias ls='ls --color=auto'
-    #alias dir='dir --color=auto'
-    #alias vdir='vdir --color=auto'
-    alias kill='true'
-    alias killall='true'
-    alias pkill='true'
-    alias skill='true'
-    alias grep='grep --color=auto'
-    alias fgrep='fgrep --color=auto'
-    alias egrep='egrep --color=auto'
-fi
-...
-```
-
-Not a very helpful alias... Running the kill binary in /bin works and completes the challenge:
-
-```sh
-$ /bin/kill 8
-$ ps -aux
-USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
-elf          1  0.5  0.0  18028  2888 pts/0    Ss   19:44   0:00 /bin/bash /sbin/init
-elf         12  0.0  0.0  18248  3220 pts/0    S    19:44   0:00 /bin/bash
-elf         33  0.0  0.0  34424  2872 pts/0    R+   19:44   0:00 ps -aux
 ```
 
 
@@ -214,100 +152,128 @@ The candy cane striping machine is up and running!
 ```
 
 
-# Shadow file restoration
+# Train Startup (There's Snow Place Like Home)
 
-In this challenge we are tasked with restoring the 
-/etc/shadow file from the /etc/shadow.bak but we 
-have limited sudo privileges on the server. 
-
-```
-              \ /
-            -->*<--
-              /o\
-             /_\_\
-            /_/_0_\
-           /_o_\_\_\
-          /_/_/_/_/o\
-         /@\_\_\@\_\_\
-        /_/_/O/_/_/_/_\
-       /_\_\_\_\_\o\_\_\
-      /_/0/_/_/_0_/_/@/_\
-     /_\_\_\_\_\_\_\_\_\_\
-    /_/o/_/_/@/_/_/o/_/0/_\
-   jgs       [___]  
-My name is Shinny Upatree, and I've made a big mistake.
-I fear it's worse than the time I served everyone bad hake.
-I've deleted an important file, which suppressed my server access.
-I can offer you a gift, if you can fix my ill-fated redress.
-Restore /etc/shadow with the contents of /etc/shadow.bak, then run "inspect_da_box" to complete this challenge.
-Hint: What commands can you run with sudo?
-elf@812104749e7e:~$ sudo -l -l
-Matching Defaults entries for elf on 812104749e7e:
-    env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
-User elf may run the following commands on 812104749e7e:
-Sudoers entry:
-    RunAsUsers: elf
-    RunAsGroups: shadow
-    Options: !authenticate
-    Commands:
-        /usr/bin/find
-```
-So, we can run find as the group shadow. Luckily 
-/etc/shadow is writable for the group.
-Simple -exec parameter for find should do the trick!
-```
-elf@812104749e7e:~$ ls -lh /etc/shadow*            
--rw-rw---- 1 root shadow   0 Dec 15 20:00 /etc/shadow
--rw------- 1 root root   652 Nov 14 13:48 /etc/shadow-
--rw-r--r-- 1 root root   677 Dec 15 19:59 /etc/shadow.bak
-elf@812104749e7e:~$ sudo -g shadow find /etc -name shadow.bak -exec cp {} /etc/shadow \;
-find: '/etc/ssl/private': Permission denied
-elf@812104749e7e:~$ inspect_da_box 
-                     ___
-                    / __'.     .-"""-.
-              .-""-| |  '.'.  / .---. \
-             / .--. \ \___\ \/ /____| |
-            / /    \ `-.-;-(`_)_____.-'._
-           ; ;      `.-" "-:_,(o:==..`-. '.         .-"-,
-           | |      /       \ /      `\ `. \       / .-. \
-           \ \     |         Y    __...\  \ \     / /   \/
-     /\     | |    | .--""--.| .-'      \  '.`---' /
-     \ \   / /     |`        \'   _...--.;   '---'`
-      \ '-' / jgs  /_..---.._ \ .'\\_     `.
-       `--'`      .'    (_)  `'/   (_)     /
-                  `._       _.'|         .'
-                     ```````    '-...--'`
-/etc/shadow has been successfully restored!
-elf@812104749e7e:~$ 
-```
-
-# Troublesome process 
-
-In this challenge we are tasked to kill a process
-but someone has created an alias kill='true'
-Removing the alias seems to work!
+Now we need to start a program, which isn't compatible with
+our linux architecture (x86_64). Qemu FTW!
 
 ```
-                ___,@
-               /  <
-          ,_  /    \  _,
-      ?    \`/______\`/
-   ,_(_).  |; (e  e) ;|
-    \___ \ \/\   7  /\/    _\8/_
-        \/\   \'=='/      | /| /|
-         \ \___)--(_______|//|//|
-          \___  ()  _____/|/_|/_|
-             /  ()  \    `----'
-            /   ()   \
-           '-.______.-'
-   jgs   _    |_||_|    _
-        (@____) || (____@)
-         \______||______/
+                             ______
+                          .-"""".._'.       _,##
+                   _..__ |.-"""-.|  |   _,##'`-._
+                  (_____)||_____||  |_,##'`-._,##'`
+                  _|   |.;-""-.  |  |#'`-._,##'`
+               _.;_ `--' `\    \ |.'`\._,##'`
+              /.-.\ `\     |.-";.`_, |##'`
+              |\__/   | _..;__  |'-' /
+              '.____.'_.-`)\--' /'-'`
+               //||\\(_.-'_,'-'`
+             (`-...-')_,##'`
+      jgs _,##`-..,-;##`
+       _,##'`-._,##'`
+    _,##'`-._,##'`
+      `-._,##'`
+My name is Pepper Minstix, and I need your help with my plight.
+I've crashed the Christmas toy train, for which I am quite contrite.
+I should not have interfered, hacking it was foolish in hindsight.
+If you can get it running again, I will reward you with a gift of delight.
+total 444
+-rwxr-xr-x 1 root root 454636 Dec  7 18:43 trainstartup
+elf@bf702257c7b6:~$ ./trainstartup 
+bash: ./trainstartup: cannot execute binary file: Exec format error
+elf@bf702257c7b6:~$ file trainstartup 
+trainstartup: ELF 32-bit LSB  executable, ARM, EABI5 version 1 (GNU/Linux), statically linked, for GNU/Linux 3.2.0, BuildID[sha1]=005de4685e8563d10b
+3de3e0be7d6fdd7ed732eb, not stripped
+elf@bf702257c7b6:~$ qemu-arm ./trainstartup 
+
+    Merry Christmas
+    Merry Christmas
+v
+>*<
+^
+/o\
+/   \               @.·
+/~~   \                .
+/ ° ~~  \         · .    
+/      ~~ \       ◆  ·    
+/     °   ~~\    ·     0
+/~~           \   .─··─ · o
+             /°  ~~  .*· · . \  ├──┼──┤                                        
+              │  ──┬─°─┬─°─°─°─ └──┴──┘                                        
+≠==≠==≠==≠==──┼──=≠     ≠=≠==≠==≠==≠==≠==≠==≠==≠==≠==≠==≠==≠==≠==≠==≠==≠==≠===≠
+              │   /└───┘\┌───┐       ┌┐                                        
+                         └───┘    /▒▒▒▒                                        
+≠==≠==≠==≠==≠==≠==≠==≠==≠==≠==≠==≠=°≠=°≠==≠==≠==≠==≠==≠==≠==≠==≠==≠==≠==≠==≠==≠
+You did it! Thank you!
+elf@bf702257c7b6:~$ 
+
+```
+
+
+# Troublesome Process (Winconceivable: The Cliffs of Winsanity)
+
+```
 My name is Sparkle Redberry, and I need your help.
 My server is atwist, and I fear I may yelp.
 Help me kill the troublesome process gone awry.
 I will return the favor with a gift before nigh.
 Kill the "santaslittlehelperd" process to complete this challenge.
+```
+
+Looking at the running processes we see PID 8 is what we want to kill:
+```sh
+$ elf@55f83966318c:~$ ps -aux
+USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+elf          1  0.2  0.0  18028  2828 pts/0    Ss   19:39   0:00 /bin/bash /sbin/init
+elf          8  0.0  0.0   4224   648 pts/0    S    19:39   0:00 /usr/bin/santaslittlehelperd
+elf         11  0.3  0.0  13528  6404 pts/0    S    19:39   0:00 /sbin/kworker
+elf         12  0.0  0.0  18248  3216 pts/0    S    19:39   0:00 /bin/bash
+elf         18  1.2  0.0  71468 26520 pts/0    S    19:39   0:00 /sbin/kworker
+elf         48  0.0  0.0  34424  2860 pts/0    R+   19:40   0:00 ps -aux
+```
+
+Simply running `kill 8` doesn't work though, and gives us no message back:
+
+```sh
+$ kill 8
+```
+
+Looking at the .bashrc file in our current (home) directory we find that `kill` has been aliased to `true`:
+
+```sh
+$ cat .bashrc
+...
+# enable color support of ls and also add handy aliases
+if [ -x /usr/bin/dircolors ]; then
+    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+    alias ls='ls --color=auto'
+    #alias dir='dir --color=auto'
+    #alias vdir='vdir --color=auto'
+    alias kill='true'
+    alias killall='true'
+    alias pkill='true'
+    alias skill='true'
+    alias grep='grep --color=auto'
+    alias fgrep='fgrep --color=auto'
+    alias egrep='egrep --color=auto'
+fi
+...
+```
+
+Not a very helpful alias... Running the kill binary in /bin works and completes the challenge:
+
+```sh
+$ /bin/kill 8
+$ ps -aux
+USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+elf          1  0.5  0.0  18028  2888 pts/0    Ss   19:44   0:00 /bin/bash /sbin/init
+elf         12  0.0  0.0  18248  3220 pts/0    S    19:44   0:00 /bin/bash
+elf         33  0.0  0.0  34424  2872 pts/0    R+   19:44   0:00 ps -aux
+```
+
+Alternatively, we can also unalias the `kill` command:
+
+```
 elf@ea96bcf6ac17:~$ alias
 alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s
 *alert$//'\'')"'
@@ -333,7 +299,8 @@ elf        175  0.0  0.0  11284   948 pts/0    S+   13:26   0:00 grep --color=au
 elf@ea96bcf6ac17:~$ 
 ```
 
-# Web Log Terminal
+
+# Web Log (Bumbles Bounce)
 
 In this terminal we are tasked with parsing an
 nginx access log file and finding out the least
@@ -419,7 +386,8 @@ elf@5e61884a1077:~$
 
 ```
 
-# Christmas Songs Data Analysis Terminal
+
+# Christmas Songs Data Analysis (I Don't Think We Are In Kansas Anymore)
 
 This time we are given access to a sqlite3 database file and
 we need to determine the most popular song in the database.
@@ -486,64 +454,76 @@ That is the #1 Christmas song, congratulations!
 elf@e15e256f745b:~$ 
 ```
 
-# Train startup terminal
 
-Now we need to start a program, which isn't compatible with
-our linux architecture (x86_64). Qemu FTW!
+# Shadow File Restoration (Oh Wait! Maybe We Are...)
 
-```
-                             ______
-                          .-"""".._'.       _,##
-                   _..__ |.-"""-.|  |   _,##'`-._
-                  (_____)||_____||  |_,##'`-._,##'`
-                  _|   |.;-""-.  |  |#'`-._,##'`
-               _.;_ `--' `\    \ |.'`\._,##'`
-              /.-.\ `\     |.-";.`_, |##'`
-              |\__/   | _..;__  |'-' /
-              '.____.'_.-`)\--' /'-'`
-               //||\\(_.-'_,'-'`
-             (`-...-')_,##'`
-      jgs _,##`-..,-;##`
-       _,##'`-._,##'`
-    _,##'`-._,##'`
-      `-._,##'`
-My name is Pepper Minstix, and I need your help with my plight.
-I've crashed the Christmas toy train, for which I am quite contrite.
-I should not have interfered, hacking it was foolish in hindsight.
-If you can get it running again, I will reward you with a gift of delight.
-total 444
--rwxr-xr-x 1 root root 454636 Dec  7 18:43 trainstartup
-elf@bf702257c7b6:~$ ./trainstartup 
-bash: ./trainstartup: cannot execute binary file: Exec format error
-elf@bf702257c7b6:~$ file trainstartup 
-trainstartup: ELF 32-bit LSB  executable, ARM, EABI5 version 1 (GNU/Linux), statically linked, for GNU/Linux 3.2.0, BuildID[sha1]=005de4685e8563d10b
-3de3e0be7d6fdd7ed732eb, not stripped
-elf@bf702257c7b6:~$ qemu-arm ./trainstartup 
-
-    Merry Christmas
-    Merry Christmas
-v
->*<
-^
-/o\
-/   \               @.·
-/~~   \                .
-/ ° ~~  \         · .    
-/      ~~ \       ◆  ·    
-/     °   ~~\    ·     0
-/~~           \   .─··─ · o
-             /°  ~~  .*· · . \  ├──┼──┤                                        
-              │  ──┬─°─┬─°─°─°─ └──┴──┘                                        
-≠==≠==≠==≠==──┼──=≠     ≠=≠==≠==≠==≠==≠==≠==≠==≠==≠==≠==≠==≠==≠==≠==≠==≠==≠===≠
-              │   /└───┘\┌───┐       ┌┐                                        
-                         └───┘    /▒▒▒▒                                        
-≠==≠==≠==≠==≠==≠==≠==≠==≠==≠==≠==≠=°≠=°≠==≠==≠==≠==≠==≠==≠==≠==≠==≠==≠==≠==≠==≠
-You did it! Thank you!
-elf@bf702257c7b6:~$ 
+In this challenge we are tasked with restoring the 
+/etc/shadow file from the /etc/shadow.bak but we 
+have limited sudo privileges on the server. 
 
 ```
+              \ /
+            -->*<--
+              /o\
+             /_\_\
+            /_/_0_\
+           /_o_\_\_\
+          /_/_/_/_/o\
+         /@\_\_\@\_\_\
+        /_/_/O/_/_/_/_\
+       /_\_\_\_\_\o\_\_\
+      /_/0/_/_/_0_/_/@/_\
+     /_\_\_\_\_\_\_\_\_\_\
+    /_/o/_/_/@/_/_/o/_/0/_\
+   jgs       [___]  
+My name is Shinny Upatree, and I've made a big mistake.
+I fear it's worse than the time I served everyone bad hake.
+I've deleted an important file, which suppressed my server access.
+I can offer you a gift, if you can fix my ill-fated redress.
+Restore /etc/shadow with the contents of /etc/shadow.bak, then run "inspect_da_box" to complete this challenge.
+Hint: What commands can you run with sudo?
+elf@812104749e7e:~$ sudo -l -l
+Matching Defaults entries for elf on 812104749e7e:
+    env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
+User elf may run the following commands on 812104749e7e:
+Sudoers entry:
+    RunAsUsers: elf
+    RunAsGroups: shadow
+    Options: !authenticate
+    Commands:
+        /usr/bin/find
+```
+So, we can run find as the group shadow. Luckily 
+/etc/shadow is writable for the group.
+Simple -exec parameter for find should do the trick!
+```
+elf@812104749e7e:~$ ls -lh /etc/shadow*            
+-rw-rw---- 1 root shadow   0 Dec 15 20:00 /etc/shadow
+-rw------- 1 root root   652 Nov 14 13:48 /etc/shadow-
+-rw-r--r-- 1 root root   677 Dec 15 19:59 /etc/shadow.bak
+elf@812104749e7e:~$ sudo -g shadow find /etc -name shadow.bak -exec cp {} /etc/shadow \;
+find: '/etc/ssl/private': Permission denied
+elf@812104749e7e:~$ inspect_da_box 
+                     ___
+                    / __'.     .-"""-.
+              .-""-| |  '.'.  / .---. \
+             / .--. \ \___\ \/ /____| |
+            / /    \ `-.-;-(`_)_____.-'._
+           ; ;      `.-" "-:_,(o:==..`-. '.         .-"-,
+           | |      /       \ /      `\ `. \       / .-. \
+           \ \     |         Y    __...\  \ \     / /   \/
+     /\     | |    | .--""--.| .-'      \  '.`---' /
+     \ \   / /     |`        \'   _...--.;   '---'`
+      \ '-' / jgs  /_..---.._ \ .'\\_     `.
+       `--'`      .'    (_)  `'/   (_)     /
+                  `._       _.'|         .'
+                     ```````    '-...--'`
+/etc/shadow has been successfully restored!
+elf@812104749e7e:~$ 
+```
 
-# isit42 challenge Terminal
+
+# isit42 challenge Terminal (We're Off To See The...)
 
 This time we are faced with a different task: We have a binary
 file, which calls the rand-function and we have to make it
